@@ -77,7 +77,7 @@ export async function Footer() {
               <div className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-primary shrink-0" />
                 <a href="mailto:acm@mjcet.ac.in" className="text-xs hover:text-primary">
-                  acm@mjcet.ac.in
+                  acm@mjcollege.ac.in
                 </a>
               </div>
             </div>
