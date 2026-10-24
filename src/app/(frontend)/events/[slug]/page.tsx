@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { cache } from 'react'
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { draftMode } from 'next/headers'
 import configPromise from '@payload-config'
 import { getPayload } from 'payload'
 import { Media } from '@/components/Media'
@@ -11,6 +11,8 @@ import { getGoogleCalendarUrl } from '@/utilities/calendar'
 import { Calendar, MapPin, Clock, ExternalLink } from 'lucide-react'
 import type { Event } from '@/payload-types'
 import { getServerSideURL } from '@/utilities/getURL'
+import { LivePreviewListener } from '@/components/LivePreviewListener'
+import { PayloadRedirects } from '@/components/PayloadRedirects'
 
 type Args = {
   params: Promise<{
@@ -18,16 +20,46 @@ type Args = {
   }>
 }
 
-export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
-  const { slug } = await paramsPromise
+export async function generateStaticParams() {
   const payload = await getPayload({ config: configPromise })
-
-  const { docs: events } = await payload.find({
+  const events = await payload.find({
     collection: 'events',
-    where: { slug: { equals: slug } },
+    draft: false,
+    limit: 1000,
+    overrideAccess: false,
+    pagination: false,
+    select: {
+      slug: true,
+    },
   })
 
-  const event = events[0] as Event | undefined
+  return events.docs.map(({ slug }) => ({ slug }))
+}
+
+const queryEventBySlug = cache(async ({ slug }: { slug: string }) => {
+  const { isEnabled: draft } = await draftMode()
+  const payload = await getPayload({ config: configPromise })
+
+  const result = await payload.find({
+    collection: 'events',
+    depth: 2,
+    draft,
+    limit: 1,
+    overrideAccess: draft,
+    pagination: false,
+    where: {
+      slug: {
+        equals: slug,
+      },
+    },
+  })
+
+  return (result.docs?.[0] as Event) || null
+})
+
+export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {
+  const { slug } = await paramsPromise
+  const event = await queryEventBySlug({ slug })
 
   if (!event) return { title: 'Event Not Found | MJCET ACM' }
 
@@ -43,17 +75,11 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 
 export default async function EventDetailPage({ params: paramsPromise }: Args) {
   const { slug } = await paramsPromise
-  const payload = await getPayload({ config: configPromise })
+  const { isEnabled: draft } = await draftMode()
+  const url = `/events/${slug}`
+  const event = await queryEventBySlug({ slug })
 
-  const { docs: events } = await payload.find({
-    collection: 'events',
-    depth: 2,
-    where: { slug: { equals: slug } },
-  })
-
-  const event = events[0] as Event | undefined
-
-  if (!event) notFound()
+  if (!event) return <PayloadRedirects url={url} />
 
   const { title, bannerImage, eventType, startDate, endDate, locationType, venue, summary, content, registrationForm } = event
   const isPast = new Date(startDate).getTime() < Date.now()
@@ -101,6 +127,9 @@ export default async function EventDetailPage({ params: paramsPromise }: Args) {
 
   return (
     <article className="py-12 md:py-20">
+      <PayloadRedirects disableNotFound url={url} />
+      {draft && <LivePreviewListener />}
+
       {/* Schema.org JSON-LD microdata for global search standards */}
       <script
         type="application/ld+json"

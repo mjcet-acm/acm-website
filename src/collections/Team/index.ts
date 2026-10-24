@@ -4,13 +4,21 @@ import { authenticated } from '../../access/authenticated'
 import { authenticatedOrPublished } from '../../access/authenticatedOrPublished'
 import { revalidateDeleteTeam, revalidateTeam } from './hooks/revalidateTeam'
 
-export const Team: CollectionConfig = {
+export const Team: CollectionConfig<'team'> = {
   slug: 'team',
   access: {
     create: authenticated,
     delete: authenticated,
     read: authenticatedOrPublished,
     update: authenticated,
+  },
+  defaultPopulate: {
+    name: true,
+    role: true,
+    tier: true,
+    department: true,
+    academicYear: true,
+    order: true,
   },
   admin: {
     useAsTitle: 'name',

@@ -4,9 +4,10 @@ import { slugField } from 'payload'
 import { authenticated } from '../../access/authenticated'
 import { authenticatedOrPublished } from '../../access/authenticatedOrPublished'
 import { defaultLexical } from '@/fields/defaultLexical'
+import { generatePreviewPath } from '../../utilities/generatePreviewPath'
 import { revalidateDeleteEvent, revalidateEvent } from './hooks/revalidateEvent'
 
-export const Events: CollectionConfig = {
+export const Events: CollectionConfig<'events'> = {
   slug: 'events',
   access: {
     create: authenticated,
@@ -14,9 +15,30 @@ export const Events: CollectionConfig = {
     read: authenticatedOrPublished,
     update: authenticated,
   },
+  defaultPopulate: {
+    title: true,
+    slug: true,
+    eventType: true,
+    startDate: true,
+    venue: true,
+  },
   admin: {
     useAsTitle: 'title',
     defaultColumns: ['title', 'eventType', 'startDate', '_status'],
+    livePreview: {
+      url: ({ data, req }) =>
+        generatePreviewPath({
+          slug: data?.slug,
+          collection: 'events',
+          req,
+        }),
+    },
+    preview: (data, { req }) =>
+      generatePreviewPath({
+        slug: data?.slug as string,
+        collection: 'events',
+        req,
+      }),
   },
   versions: {
     drafts: true,
