@@ -5,12 +5,11 @@ import configPromise from '@payload-config'
 import { getPayload, type RequiredDataFromCollectionSlug } from 'payload'
 import { draftMode } from 'next/headers'
 import React, { cache } from 'react'
+import { contactStatic } from '@/endpoints/seed/contact-static'
 import { homeStatic } from '@/endpoints/seed/home-static'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
-import { AboutSection } from '@/components/AboutSection'
-import { UpcomingEventsSpotlight } from '@/components/UpcomingEventsSpotlight'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
@@ -62,6 +61,10 @@ export default async function Page({ params: paramsPromise }: Args) {
     page = homeStatic
   }
 
+  if (!page && slug === 'contact') {
+    page = contactStatic
+  }
+
   if (!page) {
     return <PayloadRedirects url={url} />
   }
@@ -77,8 +80,6 @@ export default async function Page({ params: paramsPromise }: Args) {
       {draft && <LivePreviewListener />}
 
       <RenderHero {...hero} />
-      {slug === 'home' && <AboutSection />}
-      {slug === 'home' && <UpcomingEventsSpotlight />}
       <RenderBlocks blocks={layout} />
     </article>
   )
@@ -88,9 +89,17 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
   const { slug = 'home' } = await paramsPromise
   // Decode to support slugs with special characters
   const decodedSlug = decodeURIComponent(slug)
-  const page = await queryPageBySlug({
+  let page: RequiredDataFromCollectionSlug<'pages'> | null = await queryPageBySlug({
     slug: decodedSlug,
   })
+
+  if (!page && slug === 'home') {
+    page = homeStatic
+  }
+
+  if (!page && slug === 'contact') {
+    page = contactStatic
+  }
 
   return generateMeta({ doc: page })
 }
