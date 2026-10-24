@@ -9,6 +9,8 @@ import { homeStatic } from '@/endpoints/seed/home-static'
 
 import { RenderBlocks } from '@/blocks/RenderBlocks'
 import { RenderHero } from '@/heros/RenderHero'
+import { AboutSection } from '@/components/AboutSection'
+import { UpcomingEventsSpotlight } from '@/components/UpcomingEventsSpotlight'
 import { generateMeta } from '@/utilities/generateMeta'
 import PageClient from './page.client'
 import { LivePreviewListener } from '@/components/LivePreviewListener'
@@ -75,6 +77,8 @@ export default async function Page({ params: paramsPromise }: Args) {
       {draft && <LivePreviewListener />}
 
       <RenderHero {...hero} />
+      {slug === 'home' && <AboutSection />}
+      {slug === 'home' && <UpcomingEventsSpotlight />}
       <RenderBlocks blocks={layout} />
     </article>
   )

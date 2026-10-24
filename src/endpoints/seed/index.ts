@@ -18,6 +18,8 @@ const collections: CollectionSlug[] = [
   'forms',
   'form-submissions',
   'search',
+  'events',
+  'team',
 ]
 
 const globals: GlobalSlug[] = ['header', 'footer']
@@ -215,6 +217,119 @@ export const seed = async ({
     }),
   ])
 
+  payload.logger.info(`— Seeding events...`)
+
+  await Promise.all([
+    payload.create({
+      collection: 'events',
+      depth: 0,
+      data: {
+        title: 'MJCET ACM Annual Hackathon 2026: Code The Future',
+        slug: 'mjcet-acm-annual-hackathon-2026',
+        eventType: 'hackathon',
+        locationType: 'in-person',
+        startDate: '2026-11-15T09:00:00.000Z',
+        endDate: '2026-11-16T09:00:00.000Z',
+        venue: 'Ghulam Ahmed Hall, MJCET Campus',
+        bannerImage: image1Doc.id,
+        summary:
+          'The flagship 24-hour hackathon bringing together student developers, designers, and innovators across Hyderabad to build impactful open-source solutions.',
+        _status: 'published',
+        registrationForm: contactForm.id,
+      },
+    }),
+    payload.create({
+      collection: 'events',
+      depth: 0,
+      data: {
+        title: 'Hands-on Workshop: Modern Web Architecture & Cloud Native',
+        slug: 'workshop-modern-web-architecture',
+        eventType: 'workshop',
+        locationType: 'in-person',
+        startDate: '2026-09-10T14:00:00.000Z',
+        endDate: '2026-09-10T17:00:00.000Z',
+        venue: 'Seminar Hall, IT Department, MJCET',
+        bannerImage: image2Doc.id,
+        summary:
+          'A comprehensive technical deep-dive into full-stack development, headless CMS architectures, and modern cloud deployment pipelines.',
+        _status: 'published',
+      },
+    }),
+  ])
+
+  payload.logger.info(`— Seeding team leadership...`)
+
+  await Promise.all([
+    payload.create({
+      collection: 'team',
+      depth: 0,
+      data: {
+        name: 'Syed Rayyan',
+        role: 'Chairperson',
+        tier: 'governingBody',
+        academicYear: '2026-2027',
+        order: 1,
+        socials: {
+          linkedin: 'https://linkedin.com',
+          github: 'https://github.com',
+        },
+        photo: image1Doc.id,
+        _status: 'published',
+      },
+    }),
+    payload.create({
+      collection: 'team',
+      depth: 0,
+      data: {
+        name: 'Farhan Ahmed',
+        role: 'Vice Chairperson',
+        tier: 'governingBody',
+        academicYear: '2026-2027',
+        order: 2,
+        socials: {
+          linkedin: 'https://linkedin.com',
+          github: 'https://github.com',
+        },
+        photo: image2Doc.id,
+        _status: 'published',
+      },
+    }),
+    payload.create({
+      collection: 'team',
+      depth: 0,
+      data: {
+        name: 'Mohammed Zaid',
+        role: 'Technical Lead',
+        tier: 'teamMember',
+        department: 'technical',
+        academicYear: '2026-2027',
+        order: 10,
+        socials: {
+          github: 'https://github.com',
+        },
+        photo: image3Doc.id,
+        _status: 'published',
+      },
+    }),
+    payload.create({
+      collection: 'team',
+      depth: 0,
+      data: {
+        name: 'Ayesha Fatima',
+        role: 'Design & Creative Lead',
+        tier: 'teamMember',
+        department: 'design',
+        academicYear: '2026-2027',
+        order: 20,
+        socials: {
+          linkedin: 'https://linkedin.com',
+        },
+        photo: image1Doc.id,
+        _status: 'published',
+      },
+    }),
+  ])
+
   payload.logger.info(`— Seeding globals...`)
 
   await Promise.all([
@@ -225,18 +340,22 @@ export const seed = async ({
           {
             link: {
               type: 'custom',
-              label: 'Posts',
-              url: '/posts',
+              label: 'Events',
+              url: '/events',
             },
           },
           {
             link: {
-              type: 'reference',
+              type: 'custom',
+              label: 'Team',
+              url: '/team',
+            },
+          },
+          {
+            link: {
+              type: 'custom',
               label: 'Contact',
-              reference: {
-                relationTo: 'pages',
-                value: contactPage.id,
-              },
+              url: '/contact',
             },
           },
         ],

@@ -69,6 +69,8 @@ export interface Config {
   collections: {
     pages: Page;
     posts: Post;
+    events: Event;
+    team: Team;
     media: Media;
     categories: Category;
     users: User;
@@ -91,6 +93,8 @@ export interface Config {
   collectionsSelect: {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
+    team: TeamSelect<false> | TeamSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
@@ -775,6 +779,77 @@ export interface Form {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  title: string;
+  /**
+   * When enabled, the slug will auto-generate from the title field on save and autosave.
+   */
+  generateSlug?: boolean | null;
+  slug: string;
+  eventType: 'workshop' | 'hackathon' | 'contest' | 'webinar' | 'symposium';
+  locationType?: ('in-person' | 'online' | 'hybrid') | null;
+  startDate: string;
+  endDate?: string | null;
+  venue?: string | null;
+  bannerImage: number | Media;
+  summary: string;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Select a form created in Form Builder to enable direct on-site registration.
+   */
+  registrationForm?: (number | null) | Form;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  role: string;
+  tier: 'governingBody' | 'teamMember';
+  department?: ('technical' | 'design' | 'prMedia' | 'operations') | null;
+  /**
+   * Format: YYYY-YYYY (e.g., 2026-2027). Used for historical filtering.
+   */
+  academicYear: string;
+  /**
+   * Lower numbers display first (e.g. 1 for Chair, 2 for Vice Chair).
+   */
+  order?: number | null;
+  photo?: (number | null) | Media;
+  socials?: {
+    linkedin?: string | null;
+    github?: string | null;
+    twitter?: string | null;
+    portfolio?: string | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "redirects".
  */
 export interface Redirect {
@@ -970,6 +1045,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'posts';
         value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
+        relationTo: 'team';
+        value: number | Team;
       } | null)
     | ({
         relationTo: 'media';
@@ -1207,6 +1290,51 @@ export interface PostsSelect<T extends boolean = true> {
       };
   generateSlug?: T;
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  title?: T;
+  generateSlug?: T;
+  slug?: T;
+  eventType?: T;
+  locationType?: T;
+  startDate?: T;
+  endDate?: T;
+  venue?: T;
+  bannerImage?: T;
+  summary?: T;
+  content?: T;
+  registrationForm?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "team_select".
+ */
+export interface TeamSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  tier?: T;
+  department?: T;
+  academicYear?: T;
+  order?: T;
+  photo?: T;
+  socials?:
+    | T
+    | {
+        linkedin?: T;
+        github?: T;
+        twitter?: T;
+        portfolio?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
