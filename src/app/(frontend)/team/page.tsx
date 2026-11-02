@@ -15,19 +15,27 @@ export const metadata: Metadata = {
 }
 
 export default async function TeamPage() {
-  const payload = await getPayload({ config: configPromise })
+  let allMembers: any[] = []
 
-  const { docs: allMembers } = await payload.find({
-    collection: 'team',
-    depth: 1,
-    limit: 200,
-    sort: 'order',
-    where: {
-      _status: {
-        equals: 'published',
-      },
-    },
-  })
+  if (process.env.DATABASE_URL) {
+    try {
+      const payload = await getPayload({ config: configPromise })
+      const res = await payload.find({
+        collection: 'team',
+        depth: 1,
+        limit: 200,
+        sort: 'order',
+        where: {
+          _status: {
+            equals: 'published',
+          },
+        },
+      })
+      allMembers = res.docs
+    } catch (error) {
+      console.warn('[TeamPage] Failed to fetch team members:', error)
+    }
+  }
 
   // Separate Governing Body vs Departmental Team
   const governingBody = allMembers.filter((m) => m.tier === 'governingBody')

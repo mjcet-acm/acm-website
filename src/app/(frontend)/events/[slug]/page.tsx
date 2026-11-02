@@ -21,6 +21,10 @@ type Args = {
 }
 
 export async function generateStaticParams() {
+  if (!process.env.DATABASE_URL) {
+    return []
+  }
+
   try {
     const payload = await getPayload({ config: configPromise })
     const events = await payload.find({
@@ -42,23 +46,33 @@ export async function generateStaticParams() {
 
 const queryEventBySlug = cache(async ({ slug }: { slug: string }) => {
   const { isEnabled: draft } = await draftMode()
-  const payload = await getPayload({ config: configPromise })
 
-  const result = await payload.find({
-    collection: 'events',
-    depth: 2,
-    draft,
-    limit: 1,
-    overrideAccess: draft,
-    pagination: false,
-    where: {
-      slug: {
-        equals: slug,
+  if (!process.env.DATABASE_URL) {
+    return null
+  }
+
+  try {
+    const payload = await getPayload({ config: configPromise })
+
+    const result = await payload.find({
+      collection: 'events',
+      depth: 2,
+      draft,
+      limit: 1,
+      overrideAccess: draft,
+      pagination: false,
+      where: {
+        slug: {
+          equals: slug,
+        },
       },
-    },
-  })
+    })
 
-  return (result.docs?.[0] as Event) || null
+    return (result.docs?.[0] as Event) || null
+  } catch (error) {
+    console.warn(`[queryEventBySlug] Failed to fetch event "${slug}":`, error)
+    return null
+  }
 })
 
 export async function generateMetadata({ params: paramsPromise }: Args): Promise<Metadata> {

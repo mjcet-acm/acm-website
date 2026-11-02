@@ -3,16 +3,25 @@ import { getPayload } from 'payload'
 import { unstable_cache } from 'next/cache'
 
 export async function getRedirects(depth = 1) {
-  const payload = await getPayload({ config: configPromise })
+  if (!process.env.DATABASE_URL) {
+    return []
+  }
 
-  const { docs: redirects } = await payload.find({
-    collection: 'redirects',
-    depth,
-    limit: 0,
-    pagination: false,
-  })
+  try {
+    const payload = await getPayload({ config: configPromise })
 
-  return redirects
+    const { docs: redirects } = await payload.find({
+      collection: 'redirects',
+      depth,
+      limit: 0,
+      pagination: false,
+    })
+
+    return redirects
+  } catch (error) {
+    console.warn(`[getRedirects] Failed to fetch redirects:`, error)
+    return []
+  }
 }
 
 /**

@@ -7,19 +7,28 @@ import { unstable_cache } from 'next/cache'
 type Collection = keyof Config['collections']
 
 async function getDocument(collection: Collection, slug: string, depth = 0) {
-  const payload = await getPayload({ config: configPromise })
+  if (!process.env.DATABASE_URL) {
+    return null as any
+  }
 
-  const page = await payload.find({
-    collection,
-    depth,
-    where: {
-      slug: {
-        equals: slug,
+  try {
+    const payload = await getPayload({ config: configPromise })
+
+    const page = await payload.find({
+      collection,
+      depth,
+      where: {
+        slug: {
+          equals: slug,
+        },
       },
-    },
-  })
+    })
 
-  return page.docs[0]
+    return page.docs[0]
+  } catch (error) {
+    console.warn(`[getDocument] Failed to fetch document for ${collection}/${slug}:`, error)
+    return null as any
+  }
 }
 
 /**

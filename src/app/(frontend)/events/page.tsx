@@ -14,19 +14,27 @@ export const metadata: Metadata = {
 }
 
 export default async function EventsPage() {
-  const payload = await getPayload({ config: configPromise })
+  let events: any[] = []
 
-  const { docs: events } = await payload.find({
-    collection: 'events',
-    depth: 2,
-    limit: 100,
-    sort: 'startDate',
-    where: {
-      _status: {
-        equals: 'published',
-      },
-    },
-  })
+  if (process.env.DATABASE_URL) {
+    try {
+      const payload = await getPayload({ config: configPromise })
+      const res = await payload.find({
+        collection: 'events',
+        depth: 2,
+        limit: 100,
+        sort: 'startDate',
+        where: {
+          _status: {
+            equals: 'published',
+          },
+        },
+      })
+      events = res.docs
+    } catch (error) {
+      console.warn('[EventsPage] Failed to fetch events:', error)
+    }
+  }
 
   const now = new Date().getTime()
   const upcomingEvents = events.filter((e) => new Date(e.startDate).getTime() >= now)

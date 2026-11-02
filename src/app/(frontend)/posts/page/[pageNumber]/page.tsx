@@ -19,19 +19,27 @@ type Args = {
 
 export default async function Page({ params: paramsPromise }: Args) {
   const { pageNumber } = await paramsPromise
-  const payload = await getPayload({ config: configPromise })
 
   const sanitizedPageNumber = Number(pageNumber)
 
   if (!Number.isInteger(sanitizedPageNumber)) notFound()
 
-  const posts = await payload.find({
-    collection: 'posts',
-    depth: 1,
-    limit: 12,
-    page: sanitizedPageNumber,
-    overrideAccess: false,
-  })
+  let posts: any = { docs: [], totalPages: 1 }
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const payload = await getPayload({ config: configPromise })
+      posts = await payload.find({
+        collection: 'posts',
+        depth: 1,
+        limit: 12,
+        page: sanitizedPageNumber,
+        overrideAccess: false,
+      })
+    } catch (error) {
+      console.warn(`[PostsPageNumber] Failed to fetch posts for page ${sanitizedPageNumber}:`, error)
+    }
+  }
 
   return (
     <div className="pt-24 pb-24">
@@ -70,6 +78,10 @@ export async function generateMetadata({ params: paramsPromise }: Args): Promise
 }
 
 export async function generateStaticParams() {
+  if (!process.env.DATABASE_URL) {
+    return []
+  }
+
   try {
     const payload = await getPayload({ config: configPromise })
     const { totalDocs } = await payload.count({
