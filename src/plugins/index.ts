@@ -96,7 +96,14 @@ export const plugins: Plugin[] = [
     ? [
         s3Storage({
           collections: {
-            media: true,
+            media: process.env.R2_PUBLIC_URL
+              ? {
+                  generateFileURL: ({ filename, prefix }) => {
+                    const baseUrl = process.env.R2_PUBLIC_URL?.replace(/\/+$/, '')
+                    return `${baseUrl}${prefix ? `/${prefix}` : ''}/${filename}`
+                  },
+                }
+              : true,
           },
           bucket: process.env.R2_BUCKET,
           config: {
@@ -106,6 +113,7 @@ export const plugins: Plugin[] = [
               secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
             },
             region: 'auto',
+            forcePathStyle: true,
           },
         }),
       ]

@@ -1,0 +1,51 @@
+services:
+  app:
+    image: ${IMAGE_NAME:-ghcr.io/mjcet-acm/acm-website}:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - NODE_OPTIONS=--max-old-space-size=400
+      - DATABASE_URL=${DATABASE_URL}
+      - PAYLOAD_SECRET=${PAYLOAD_SECRET}
+      - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL:-https://acmmjcet.com}
+      - CRON_SECRET=${CRON_SECRET}
+      - PREVIEW_SECRET=${PREVIEW_SECRET}
+      - R2_BUCKET=${R2_BUCKET}
+      - R2_ENDPOINT=${R2_ENDPOINT}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+    ports:
+      # Bound strictly to loopback so traffic is only accepted via cloudflared
+      - '127.0.0.1:3000:3000'
+    healthcheck:
+      # BusyBox wget compatible test
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/api/health?type=liveness || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - acm_internal
+
+  # Cloudflare Tunnel Daemon (outbound TLS tunnel to Cloudflare Edge)
+  # NOTE: In Cloudflare Dashboard > Zero Trust > Networks > Tunnels > Public Hostname:
+  # Set Service URL to "http://app:3000" (routes across the acm_internal bridge network)
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    mem_limit: 64m
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - acm_internal
+
+networks:
+  acm_internal:
+    driver: bridge

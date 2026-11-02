@@ -20,7 +20,56 @@ import { getServerSideURL } from './utilities/getURL'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Restrict Sharp to single-threaded sequential execution without in-memory caching on 1 GB host
+sharp.concurrency(1)
+sharp.cache(false)
+
 export default buildConfig({
+  endpoints: [
+    {
+      path: '/health',
+      method: 'get',
+      handler: async (req) => {
+        const url = new URL(req.url || '/', 'http://localhost:3000')
+        const type = url.searchParams.get('type') || 'liveness'
+
+        if (type === 'liveness') {
+          return Response.json(
+            { status: 'ok', type: 'liveness', timestamp: new Date().toISOString() },
+            { status: 200 },
+          )
+        }
+
+        if (type === 'readiness') {
+          try {
+            await req.payload.count({ collection: 'users' })
+            return Response.json(
+              {
+                status: 'ok',
+                type: 'readiness',
+                database: 'connected',
+                timestamp: new Date().toISOString(),
+              },
+              { status: 200 },
+            )
+          } catch (error) {
+            req.payload.logger.error({ err: error, message: 'Readiness check failed' })
+            return Response.json(
+              {
+                status: 'error',
+                type: 'readiness',
+                database: 'disconnected',
+                error: error instanceof Error ? error.message : 'Database check failed',
+              },
+              { status: 503 },
+            )
+          }
+        }
+
+        return Response.json({ error: 'Invalid health check type' }, { status: 400 })
+      },
+    },
+  ],
   admin: {
     components: {
       // The `BeforeLogin` component renders a message that you see while logging into your admin panel.
@@ -63,6 +112,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
+    push: process.env.DB_PUSH !== 'false',
   }),
   collections: [Pages, Posts, Events, Team, Media, Categories, Users],
   cors: [getServerSideURL()].filter(Boolean),

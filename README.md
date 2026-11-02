@@ -164,7 +164,7 @@ Contributions from chapter members and student developers are welcome!
 Muffakham Jah College of Engineering and Technology  
 Mount Pleasant, 8-2-249 to 267, Road No. 3, Banjara Hills, Hyderabad, Telangana 500034  
 
-- **Website**: [acm.mjcet.ac.in](https://acm.mjcet.ac.in)
+- **Website**: [acmmjcet.com](https://acmmjcet.com)
 - **GitHub**: [@mjcet-acm](https://github.com/mjcet-acm)
 - **Instagram**: [@mjcetacm](https://instagram.com/mjcetacm)
 - **LinkedIn**: [MJCET ACM Student Chapter](https://linkedin.com/company/mjcetacm)

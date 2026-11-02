@@ -1,0 +1,98 @@
+name: Production Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: production_deployment
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Container Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_SERVER_URL=https://acmmjcet.com
+            R2_PUBLIC_URL=https://media.acmmjcet.com
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to OCI VM 1 (App Host)
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Execute Remote Deployment via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TARGET_TAG: sha-${{ github.sha }}
+        with:
+          host: ${{ secrets.OCI_HOST }}
+          username: ${{ secrets.OCI_USER || 'ubuntu' }}
+          key: ${{ secrets.OCI_SSH_KEY }}
+          envs: TARGET_TAG
+          script: |
+            set -euo pipefail
+            cd /opt/acm-website || cd ~/acm-website
+
+            echo "=== Pulling Image Tag: ${TARGET_TAG} ==="
+            IMAGE_TAG=${TARGET_TAG} docker compose -f compose.prod.yaml pull app
+
+            echo "=== Rolling out Application Container ==="
+            IMAGE_TAG=${TARGET_TAG} docker compose -f compose.prod.yaml up -d app tunnel
+
+            echo "=== Waiting for Readiness Probe ==="
+            for i in $(seq 1 12); do
+              if curl -s -f http://127.0.0.1:3000/api/health?type=readiness | grep -q '"status":"ok"'; then
+                echo "Readiness probe passed!"
+                exit 0
+              fi
+              echo "Waiting for container readiness ($i/12)..."
+              sleep 5
+            done
+
+            echo "Deployment readiness probe failed after 60 seconds!" >&2
+            exit 1

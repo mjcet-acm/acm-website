@@ -1,0 +1,38 @@
+# Build artifacts and caches
+.next
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store
+
+# Environment files and secrets (Never bake into Docker images)
+.env
+.env*.local
+*.pem
+*.key
+
+# Git and IDE
+.git
+.gitignore
+.vscode
+.agents
+.claude
+.github
+
+# Testing and Coverage
+tests
+playwright-report
+test-results
+coverage
+vitest.config.*
+playwright.config.*
+
+# Documentation & Misc
+docs
+README.md
+LICENSE
+Dockerfile*
+compose*
+docker-compose*
