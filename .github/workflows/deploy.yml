@@ -42,6 +42,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=sha,prefix=sha-,format=full
             type=sha,prefix=sha-,format=short
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
@@ -63,6 +64,9 @@ jobs:
     name: Deploy to OCI VM 1 (App Host)
     needs: build-and-push
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -70,14 +74,20 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         env:
           TARGET_TAG: sha-${{ github.sha }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
         with:
           host: ${{ secrets.OCI_HOST }}
           username: ${{ secrets.OCI_USER || 'ubuntu' }}
           key: ${{ secrets.OCI_SSH_KEY }}
-          envs: TARGET_TAG
+          envs: TARGET_TAG,GHCR_TOKEN,ACTOR
           script: |
             set -euo pipefail
             cd /opt/acm-website || cd ~/acm-website
+
+            if [ -n "${GHCR_TOKEN:-}" ]; then
+              echo "${GHCR_TOKEN}" | docker login ghcr.io -u "${ACTOR}" --password-stdin || true
+            fi
 
             echo "=== Pulling Image Tag: ${TARGET_TAG} ==="
             IMAGE_TAG=${TARGET_TAG} docker compose -f compose.prod.yaml pull app
