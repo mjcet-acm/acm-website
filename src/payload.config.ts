@@ -118,7 +118,7 @@ export default buildConfig({
   cors: [getServerSideURL()].filter(Boolean),
   globals: [Header, Footer],
   plugins,
-  secret: process.env.PAYLOAD_SECRET,
+  secret: process.env.PAYLOAD_SECRET || 'build-time-secret-placeholder-for-next-build',
   sharp,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

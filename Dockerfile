@@ -30,6 +30,7 @@ ARG NEXT_PUBLIC_SERVER_URL
 ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL
 ARG R2_PUBLIC_URL
 ENV R2_PUBLIC_URL=$R2_PUBLIC_URL
+ENV PAYLOAD_SECRET="build-time-secret-placeholder-for-next-build"
 
 # Next.js collects completely anonymous telemetry data about general usage.
 # Learn more here: https://nextjs.org/telemetry
